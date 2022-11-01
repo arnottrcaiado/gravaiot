@@ -1,6 +1,6 @@
 # api para receber dados e gravar em banco MYSQL
 #
-from flask import Flask, request, render_template, url_for, redirect, jsonnify
+from flask import Flask, request, render_template, url_for, redirect, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
 import time
