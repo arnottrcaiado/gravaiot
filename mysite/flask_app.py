@@ -50,6 +50,11 @@ def postJson():
     else :
         return {"status": "erro-header invalido"}
 
+@app.route('/mostraDados', methods=['GET'])
+def mostraDados():
+    consulta = Dados.query.all()
+    return( {"Query":str(len(consulta))})
+
 # funcao para validar header
 def validaHeader( cabecalho ):
     if cabecalho == header_key :
