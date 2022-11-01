@@ -54,7 +54,7 @@ def postJson():
 def mostraDados():
     consulta = Dados.query.all()
     result = [d.__dict__ for d in consulta]
- #   return jsonify(result=result)
+    return jsonify(result=result)
 
 # funcao para validar header
 def validaHeader( cabecalho ):
