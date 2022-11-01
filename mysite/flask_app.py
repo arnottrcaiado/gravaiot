@@ -1,6 +1,6 @@
 # api para receber dados e gravar em banco MYSQL
 #
-from flask import Flask, request, render_template, url_for, redirect
+from flask import Flask, request, render_template, url_for, redirect, jsonnify
 from flask_sqlalchemy import SQLAlchemy
 import os
 import time
@@ -53,7 +53,8 @@ def postJson():
 @app.route('/mostraDados', methods=['GET'])
 def mostraDados():
     consulta = Dados.query.all()
-    return( {"Query":str(len(consulta))})
+    result = [d.__dict__ for d in consulta]
+ #   return jsonify(result=result)
 
 # funcao para validar header
 def validaHeader( cabecalho ):
