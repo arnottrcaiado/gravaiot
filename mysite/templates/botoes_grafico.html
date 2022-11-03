@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device=width, initial-scale=1.0">
+	<title>Teste votacao</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+    <label>Total UM:{{total_um}} :<a href="http://gravaiot.pythonanywhere.com/botaoum"><button>Modelo Um</button></a> </label>
+    <label>Total DOIS:{{total_dois}} :<a href="http://gravaiot.pythonanywhere.com/botaodois"><button>Modelo Dois</button></a> </label>
+
+</head>
+<body>
+<canvas id="bar-chart-horizontal" width="200" height="100"></canvas>
+
+   <script>
+       var ctx = document.getElementById("bar-chart-horizontal").getContext("2d");
+       var lineChart = new Chart( ctx, {
+           type: "bar",
+           data: {
+               labels: {{ labels | safe }},
+               datasets: [
+                   {
+                       label: "Totais",
+                       data: {{ totais | safe }},
+                       fill: true,
+                       borderColor: "rgb(0, 0, 0)",
+                       backgroundColor: "rgb(0,206,209)",
+                       lineTension: 0.5
+                   }
+                ]
+           },
+           options: {
+            responsive: true
+        }
+       });
+
+   </script>
+
+</body>
+
+</html>
+

@@ -37,6 +37,18 @@ class Dados(db.Model):
     def to_json(self):
         return {"id": self.id, "sensor": self.nome, "valor": self.email, "data": self.data, "hora": self.hora }
 
+# criação da classe com a estrutura da tabela para interacoes
+class Interacoes(db.Model):
+    id = db.Column(db.Integer, primary_key= True)
+    modelo = db.Column(db.String(15))
+    avalia = db.Column(db.Integer)
+    data = db.Column(db.String(10))
+    hora = db.Column(db.String(5))
+
+    def to_json(self):
+        return {"id": self.id, "modelo": self.modelo, "avalia": self.avalia, "data": self.data, "hora": self.hora }
+
+
 
 @app.route('/postJson', methods=['POST'])
 def postJson():
@@ -49,6 +61,34 @@ def postJson():
         return {"status": str(sensor) , "valor": str(valor)}
     else :
         return {"status": "erro-header invalido"}
+
+@app.route('/configura', methods=['GET','POST'])
+def configura():
+    if request.method == 'GET' :
+        return render_template( 'configura.html')
+    elif request.method == 'POST' :
+        minimo = request.form.get('minimo')
+        maximo = request.form.get('maximo')
+        # chama funcao que grava dados
+        return {"Recebi dados ok": str(minimo)}
+
+@app.route('/botoes', methods=['GET'])
+def botoes():
+    tt_botao1 = Interacoes.query.filter(Interacoes.modelo.like ("BT1"))
+    tt_botao2 = Interacoes.query.filter(Interacoes.modelo.like ("BT2"))
+    totais =[tt_botao1.count(),tt_botao2.count(), tt_botao1.count()+tt_botao2.count()]
+    labels = ["Um", "Dois", "Geral"]
+    return render_template('botoes.html', labels=labels, totais=totais, total_um = tt_botao1.count(), total_dois = tt_botao2.count())
+
+@app.route('/botaoum', methods=['GET','POST'])
+def botaoum():
+    gravaDadosInteracoes( 'BT1', 10 )
+    return redirect(url_for('botoes'))
+
+@app.route('/botaodois', methods=['GET', 'POST'])
+def botaodois():
+    gravaDadosInteracoes( 'BT2', 10 )
+    return redirect(url_for('botoes'))
 
 @app.route('/mostraDados', methods=['GET'])
 def mostraDados():
@@ -70,6 +110,16 @@ def gravaDadosDb( sensor, valor ):
     hora_atual = str(datetime.time(datetime.now()))
     hora_atual = hora_atual[0:5]
     dados=Dados(sensor=sensor, valor=valor, data=data_atual, hora=hora_atual)
+    db.session.add(dados)
+    db.session.commit()
+    return
+
+# grava dados das interacoes
+def gravaDadosInteracoes( modelo, avaliacao ):
+    data_atual = str(date.today())
+    hora_atual = str(datetime.time(datetime.now()))
+    hora_atual = hora_atual[0:5]
+    dados=Interacoes(modelo=modelo, avalia=avaliacao, data=data_atual, hora=hora_atual)
     db.session.add(dados)
     db.session.commit()
     return
