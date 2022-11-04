@@ -26,7 +26,7 @@ db = SQLAlchemy(app)
 # flask db init
 #
 
-# criação da classe com a estrutura da tabela Usuario
+# criação da classe com a estrutura da tabela com dados de leitura sensores
 class Dados(db.Model):
     id = db.Column(db.Integer, primary_key= True)
     sensor = db.Column(db.String(4))
@@ -77,8 +77,8 @@ def botoes():
     tt_botao1 = Interacoes.query.filter(Interacoes.modelo.like ("BT1"))
     tt_botao2 = Interacoes.query.filter(Interacoes.modelo.like ("BT2"))
     totais =[tt_botao1.count(),tt_botao2.count(), tt_botao1.count()+tt_botao2.count()]
-    labels = ["Um", "Dois", "Geral"]
-    return render_template('botoes.html', labels=labels, totais=totais, total_um = tt_botao1.count(), total_dois = tt_botao2.count())
+    modelos = ["Um", "Dois", "Geral"]
+    return render_template('botoes.html', modelos=modelos, totais=totais, total_um = tt_botao1.count(), total_dois = tt_botao2.count())
 
 @app.route('/botaoum', methods=['GET','POST'])
 def botaoum():
