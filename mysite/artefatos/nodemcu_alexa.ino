@@ -8,15 +8,15 @@
 #define dev2Nome  "ar"
 #define dev3Nome  "luz"
 
-#define D1 5    // porta de saida para ligar primeiro dispositivo - fonte
-#define D2 4    // porta de saida para ligar segundo dispotitivo - ventilador
-#define D3 0    // porta de saida para ligar terceiro dispositivo - luzes LED
+#define D1 5    // porta de saida para ligar primeiro dispositivo - tomada
+#define D2 4    // porta de saida para ligar segundo dispotitivo - ventilador / ar
+#define D3 0    // porta de saida para ligar terceiro dispositivo - luz - LED
 
 Espalexa espalexa;
 
-void funcaoLigafonte( uint8_t param);
-void funcaoLigavento( uint8_t param);
-void funcaoLigaled( uint8_t param);
+void funcaoLigaTomada( uint8_t param);
+void funcaoLigaAr( uint8_t param);
+void funcaoLigaLuz( uint8_t param);
 void setup() {
   Serial.begin( 115200 );
   WiFi.begin( ssid, password );
@@ -26,10 +26,10 @@ void setup() {
     delay(100);
   }
   Serial.println("Conectado");
-  
-  espalexa.addDevice( dev1Nome, funcaoLigafonte);
-  espalexa.addDevice( dev2Nome, funcaoLigavento);
-  espalexa.addDevice( dev3Nome, funcaoLigaled);
+
+  espalexa.addDevice( dev1Nome, funcaoLigaTomada);
+  espalexa.addDevice( dev2Nome, funcaoLigaAr);
+  espalexa.addDevice( dev3Nome, funcaoLigaLuz);
 
   pinMode( D1, OUTPUT );
   pinMode( D2, OUTPUT );
@@ -40,37 +40,42 @@ void loop() {
   espalexa.loop();
 }
 
-// funcao para ligar peimriro dispositivo - Fonte 
-void funcaoLigafonte( uint8_t param ){
+
+void funcaoLigaTomada( uint8_t param ){
   Serial.println( param );
   if ( param == 0 ) {
     digitalWrite ( D1, LOW );
+    Serial.println("Tomada: desligada");
   }
   else {
     digitalWrite ( D1, HIGH );
+    Serial.println("Tomada: Ligada");
   }
 }
 
-// funcao para ligar segundo dispositivo - ventilador
-void funcaoLigavento( uint8_t param ){
+void funcaoLigaAr( uint8_t param ){
 
   Serial.println( param );
   if ( param == 0 ) {
     digitalWrite ( D2, LOW );
+    Serial.println("Ar: desligado");
   }
   else {
     digitalWrite ( D2, HIGH );
+    Serial.println("Ar: Ligado");
   }
 }
 
-// funcao para ligar terceiro dispositivo - luz leds
-void funcaoLigaled( uint8_t param ){
+void funcaoLigaLuz( uint8_t param ){
 
   Serial.println( param );
   if ( param == 0 ) {
     digitalWrite ( D3, LOW );
+    Serial.println("Luz: desligada");
   }
   else {
     digitalWrite ( D3, HIGH );
+    Serial.println("Luz: Ligada");
+
   }
 }
