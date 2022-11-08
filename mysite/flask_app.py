@@ -62,6 +62,22 @@ def postJson():
     else :
         return {"status": "erro-header invalido"}
 
+statusModeloUm = "ON"
+
+@app.route('/setamodelo', methods=['GET','POST'])
+def setamodelo():
+    dados = request.get_json()
+    valor = dados["valor"]
+    global statusModeloUm
+    statusModeloUm = valor
+    return {"Stat modelo um": statusModeloUm}
+
+@app.route('/statusmodeloum', methods=['GET', 'POST'])
+def testaget():
+    global statusModeloUm
+    valor = statusModeloUm
+    return {"Modelo Um": str(valor)}
+
 @app.route('/configura', methods=['GET','POST'])
 def configura():
     if request.method == 'GET' :
