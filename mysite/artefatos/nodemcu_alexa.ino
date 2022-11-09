@@ -40,7 +40,7 @@ void loop() {
   espalexa.loop();
 }
 
-
+// funcao construida para ligar dispositivo TOMADA
 void funcaoLigaTomada( uint8_t param ){
   Serial.println( param );
   if ( param == 0 ) {
@@ -53,6 +53,7 @@ void funcaoLigaTomada( uint8_t param ){
   }
 }
 
+// funcao construida paar ligar dispositivo AR
 void funcaoLigaAr( uint8_t param ){
 
   Serial.println( param );
@@ -66,6 +67,8 @@ void funcaoLigaAr( uint8_t param ){
   }
 }
 
+
+// funcao construida para ligar dispositivo LUZ
 void funcaoLigaLuz( uint8_t param ){
 
   Serial.println( param );
