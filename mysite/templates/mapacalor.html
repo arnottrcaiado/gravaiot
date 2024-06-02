@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz de Temperaturas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.2.0/dist/chartjs-chart-matrix.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+        canvas {
+            width: 100% !important;
+            height: 600px !important;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .date-time-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .date-time-button:hover {
+            background-color: #e0e0e0;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .stats {
+            width: 23%;
+            text-align: center;
+        }
+        .stat-button {
+            width: 100%;
+            padding: 20px;
+            margin-top: 10px;
+            font-size: 24px;
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .stat-button:hover {
+            background-color: #e0e0e0;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+        .stat-label {
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-container">
+            <h1>Matriz de Temperaturas</h1>
+            <button id="date-time-button" class="date-time-button">Data e Hora</button>
+        </div>
+        <canvas id="heatmap"></canvas>
+        <div class="stats-container">
+            <div class="stats">
+                <div class="stat-button">
+                    <div class="stat-label">Média de Temperaturas</div>
+                    <div id="avg-temp-value"></div>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-button">
+                    <div class="stat-label">Desvio Padrão</div>
+                    <div id="std-temp-value"></div>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-button">
+                    <div class="stat-label">Máxima</div>
+                    <div id="max-temp-value"></div>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-button">
+                    <div class="stat-label">Mínima</div>
+                    <div id="min-temp-value"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let heatmapChart;
+
+        function fetchDataAndUpdateChart() {
+            fetch('/api/latest-temperature')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);  // Verifica os dados no console
+
+                    // Processa os dados para estatísticas
+                    const allTemperatures = data.temperature_matrix.flat().map(temp => parseFloat(temp));
+                    const avgTemp = allTemperatures.reduce((sum, temp) => sum + temp, 0) / allTemperatures.length;
+                    const stdTemp = Math.sqrt(allTemperatures.reduce((sum, temp) => sum + Math.pow(temp - avgTemp, 2), 0) / allTemperatures.length);
+                    const maxTemp = Math.max(...allTemperatures);
+                    const minTemp = Math.min(...allTemperatures);
+
+                    // Exibe as estatísticas como botões
+                    document.getElementById('avg-temp-value').innerText = `${avgTemp.toFixed(2)}°C`;
+                    document.getElementById('std-temp-value').innerText = `${stdTemp.toFixed(2)}°C`;
+                    document.getElementById('max-temp-value').innerText = `${maxTemp.toFixed(2)}°C`;
+                    document.getElementById('min-temp-value').innerText = `${minTemp.toFixed(2)}°C`;
+
+                    // Formata e exibe data e hora
+                    const dateTimeButton = document.getElementById('date-time-button');
+                    const formattedDateTime = `${data.date_time.date} ${data.date_time.time}`;
+                    dateTimeButton.innerText = formattedDateTime;
+
+                    const ctx = document.getElementById('heatmap').getContext('2d');
+
+                    // Define uma função para a escala de cores com faixas especificadas
+                    function getColor(value) {
+                        if (value <= 10) {
+                            return `rgba(0, 0, 255, ${(value - 0) / 10})`; // Branco a Azul
+                        } else if (value <= 20) {
+                            return `rgba(0, 0, 255, 1)`; // Azul
+                        } else if (value <= 25) {
+                            return `rgba(0, 255, 0, ${(value - 20) / 5})`; // Azul a Verde
+                        } else if (value <= 30) {
+                            return `rgba(255, 255, 0, ${(value - 25) / 5})`; // Verde a Amarelo
+                        } else if (value <= 40) {
+                            return `rgba(255, 165, 0, ${(value - 30) / 10})`; // Amarelo a Laranja
+                        } else {
+                            return `rgba(255, 0, 0, ${(value - 40) / 60})`; // Laranja a Vermelho
+                        }
+                    }
+
+                    // Processa os dados para o formato do chartjs-chart-matrix
+                    const heatmapData = [];
+                    for (let row = 0; row < data.temperature_matrix.length; row++) {
+                        for (let col = 0; col < data.temperature_matrix[row].length; col++) {
+                            heatmapData.push({
+                                x: col,
+                                y: row,
+                                v: parseFloat(data.temperature_matrix[row][col])
+                            });
+                        }
+                    }
+
+                    // Destrói o gráfico anterior, se existir, antes de criar um novo
+                    if (heatmapChart) {
+                        heatmapChart.destroy();
+                    }
+
+                    heatmapChart = new Chart(ctx, {
+                        type: 'matrix',
+                        data: {
+                            datasets: [{
+                                label: 'Heatmap',
+                                data: heatmapData,
+                                backgroundColor(ctx) {
+                                    const value = ctx.dataset.data[ctx.dataIndex].v;
+                                    return getColor(value);
+                                },
+                                borderWidth: 1,
+                                width(ctx) {
+                                    const a = ctx.chart.chartArea;
+                                    return a ? (a.right - a.left) / data.temperature_matrix[0].length - 1 : 10;
+                                },
+                                height(ctx) {
+                                    const a = ctx.chart.chartArea;
+                                    return a ? (a.bottom - a.top) / data.temperature_matrix.length - 1 : 10;
+                                }
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        title() { return ''; },
+                                        label(item) {
+                                            const value = item.dataset.data[item.dataIndex].v;
+                                            return `Temperatura: ${value}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'linear',
+                                    position: 'bottom',
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function(value, index, values) {
+                                            return 'Col ' + (index + 1);
+                                        }
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    type: 'linear',
+                                    position: 'left',
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function(value, index, values) {
+                                            return 'Row ' + (index + 1);
+                                        }
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            plugins: {
+                                datalabels: {
+                                    display: true,
+                                    color: '#000',
+                                    font: {
+                                        size: 24,
+                                        weight: 'normal'
+                                    },
+                                    formatter: function(value, context) {
+                                        return Math.round(value.v);  // Remove casas decimais
+                                    }
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Chama a função fetchDataAndUpdateChart a cada 30 segundos
+        setInterval(fetchDataAndUpdateChart, 30000);
+
+        // Chama a função fetchDataAndUpdateChart ao carregar a página
+        window.onload = fetchDataAndUpdateChart;
+    </script>
+</body>
+</html>

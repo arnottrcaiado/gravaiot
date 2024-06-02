@@ -7,8 +7,6 @@ import time
 from datetime import datetime, date
 import pandas as pd
 import csv
-import numpy as np
-
 
 # Pasta onde os arquivos CSV serão armazenados
 DATA_FOLDER = os.path.join('mysite', 'dados')
@@ -151,24 +149,17 @@ def save_last_data_to_csv(temperatures):
     csv_file_path = os.path.join(DATA_FOLDER, 'lasttemperature.csv')
     initialize_csv_file(csv_file_path)
 
-    with open(csv_file_path, 'r') as csv_file:
-        reader = csv.reader(csv_file)
-        header = next(reader)
-
     with open(csv_file_path, mode='w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        # Escreve o cabeçalho
-        writer.writerow(header)
+        # Gera um id único
+        row_id = len(open(csv_file_path).readlines())
         # Data e hora atuais
         now = datetime.now()
         date_str = now.strftime('%Y-%m-%d')
         time_str = now.strftime('%H:%M:%S')
-        # Gera um id único
-        row_id = 1  # Sempre 1 porque é o único registro de dados no arquivo
         # Escreve a linha com id, data, hora e as temperaturas
         row = [row_id, date_str, time_str] + temperatures
         writer.writerow(row)
-
 
 
 @app.route('/api/temperaturas', methods=['POST'])
@@ -178,42 +169,23 @@ def receive_temperatures():
         if "valor" in data:
             temperatures = data["valor"]
             save_last_data_to_csv(temperatures)
-            if is_data_significant(temperatures, CSV_FILE_PATH):
+            if not is_data_equal(temperatures, os.path.join(DATA_FOLDER, 'temperatures.csv')):
                 save_data_to_csv(temperatures)
                 return jsonify({"message": "Dados recebidos com sucesso", "dados": temperatures}), 200
             else:
-                return jsonify({"message": "Dados mantidos"}), 200
+                return jsonify({"message": "Dados não salvos, iguais"}), 200
         else:
             return jsonify({"error": "Dados inválidos"}), 400
     else:
         return jsonify({"error": "Requisição não é JSON"}), 400
 
-def is_data_significant(new_data, filename, threshold=0.5):
-    last_line = read_last_line(filename)
-    if not last_line:
-        save_data_to_csv(new_data)
-        return True  # Se não houver dados anteriores, considera significativo
-    last_data = last_line[3:]  # Ignora id, data, hora
-    last_data = np.array(list(map(float, last_data)))
-    new_data = np.array(list(map(float, new_data)))
-    last_mean = np.mean(last_data)
-    new_mean = np.mean(new_data)
-    last_std = np.std(last_data)
-    new_std = np.std(new_data)
-    return abs(new_mean - last_mean) > threshold or abs(new_std - last_std) > threshold
-
 
 @app.route('/api/latest-temperature')
 def latest_temperature():
     last_line = read_last_line(CSV_LASTFILE_PATH)
-    if last_line:
-        temp_data = last_line[3:]  # Ignora id, data, hora
-        temperature_matrix = [temp_data[i:i + 8] for i in range(0, len(temp_data), 8)]
-        date_time = {"date": last_line[1], "time": last_line[2]}
-        return jsonify({"temperature_matrix": temperature_matrix, "date_time": date_time})
-    return jsonify({"temperature_matrix": [], "date_time": {"date": "", "time": ""}})
-
-
+    temp_data = last_line[3:]  # Ignora id, data, hora
+    temperature_matrix = [temp_data[i:i + 8] for i in range(0, len(temp_data), 8)]
+    return jsonify(temperature_matrix)
 
 @app.route('/mapa')
 def index():
@@ -297,13 +269,10 @@ def gravaDadosInteracoes( modelo, avaliacao ):
     return
 
 def read_last_line(file_path):
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-            if len(lines) > 1:  # Verifica se há mais de uma linha (cabeçalho + dados)
-                last_line = lines[-1].strip().split(',')
-                return last_line
-    return None
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+        last_line = lines[-1].strip().split(',')
+        return last_line
 
 if __name__ == '__main__':
     app.run(debug=True)

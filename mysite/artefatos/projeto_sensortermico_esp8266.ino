@@ -7,6 +7,9 @@
 #include <ESP8266mDNS.h>
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
+#include <fauxmoESP.h>
+#include <math.h>
+
 
 #define PIN D3       // Pino de dados para a barra de LEDs
 #define NUMPIXELS 8  // Número de LEDs na barra
@@ -22,6 +25,8 @@
 // Pinos do NodeMCU para o sensor térmico
 #define SENSOR_SDA D2
 #define SENSOR_SCL D1
+
+#define TEMPLIMITE 40
 
 #define APIENDPOINT "http://gravaiot.pythonanywhere.com/api/temperaturas"
 #define APIKEY "01234"
@@ -39,6 +44,7 @@ struct redes {
 char *redeAtual;
 int respostaHttp = 0;
 bool conectou = false;
+float tempAlerta = 0;
 
 struct redes redeWifi[NWIFIS] = {
   {"AP1501", "ARBBBE11"},
@@ -59,10 +65,29 @@ Adafruit_AMG88xx amg;
 // Configuração do servidor web
 ESP8266WebServer server(80);
 
+/*
+Configuração na Alexa:
+Adicionar o dispositivo Fauxmo na Alexa:
+
+Abra o aplicativo Alexa no seu smartphone.
+Vá em Dispositivos -> Adicionar Dispositivo -> Outro.
+Selecione "Procurar dispositivos".
+A Alexa deve detectar automaticamente o dispositivo "sensor aviso".
+Criar uma Rotina:
+
+No aplicativo Alexa, vá em Mais -> Rotinas -> Adicionar Rotina.
+Dê um nome à sua rotina (por exemplo, "Aviso Sensor").
+Em Quando isso acontecer, selecione Dispositivo e escolha o dispositivo "sensor aviso".
+Em Adicionar ação, selecione Avisar e escreva a mensagem que deseja que a Alexa diga (por exemplo, "Temperatura alta detectada!").
+*/
+// Inicializa a FauxmoESP
+fauxmoESP fauxmo;
+
+
 unsigned long previousMillis;
 unsigned long currentMillis;
 
-const long interval = 30000;  // Intervalo de 1 minuto em milissegundos
+const long interval = 10000;  // Intervalo de 1 minuto em milissegundos
 
 void setup() {
   Serial.begin(115200);
@@ -120,6 +145,22 @@ void setup() {
   display.drawString(64, 32, WiFi.localIP().toString());
   display.display();
   previousMillis = millis();
+
+
+  // Configura o dispositivo Fauxmo
+  fauxmo.addDevice("Aviso sensor");
+
+  // Configura o callback para o dispositivo Fauxmo
+  fauxmo.onSetState([](unsigned char device_id, const char * device_name, bool state, unsigned char value) {
+    Serial.printf("[MAIN] Device #%d (%s) state: %s\n", device_id, device_name, state ? "ON" : "OFF");
+    if (state) {
+      Serial.println("Aviso da Alexa: Medida crítica atingida!");
+    }
+  });
+
+  // Inicializa FauxmoESP
+  fauxmo.enable(true);
+
   delay(5000);
 }
 
@@ -128,13 +169,22 @@ void loop() {
   Wire.begin(SENSOR_SDA, SENSOR_SCL);
   amg.readPixels(pixels);
   displayData(pixels);
+
+  // Atualiza FauxmoESP
+  fauxmo.handle();
+
   currentMillis = millis();
   if ((currentMillis - previousMillis) >= interval) {
     Serial.println("Envio de Dados p/ API");
-    delay(2000);
     previousMillis = currentMillis;
     enviarDadosParaAPI(pixels, APIENDPOINT, APIKEY);
     delay(2000);
+
+    if (tempAlerta > TEMPLIMITE) {  // Ajuste o valor crítico conforme necessário
+    // Dispara a função da Alexa
+    fauxmo.setState("Aviso sensor", true, 255);
+    }
+
   }
 }
 
@@ -178,6 +228,8 @@ void displayData(float pixels[64]) {
 // Função para mostrar a temperatura na barra de LEDs RGB
 void mostrarTemperatura(float temp) {
   uint32_t color;
+
+  tempAlerta = temp;
 
   if (temp < 10) {
     // Tons de branco
@@ -227,7 +279,7 @@ void enviarDadosParaAPI(float *pixels, const char *apiEndpoint, const char *apiK
     JsonArray dataArray = jsonDoc.createNestedArray("valor");
 
     for (int i = 0; i < 64; i++) {
-      dataArray.add(pixels[i]);
+      dataArray.add((int) round(pixels[i]));
     }
 
     String jsonString;
