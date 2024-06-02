@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização de Dados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Visualização de Dados do Sensor</h1>
+    <div class="controls">
+        <button id="reset-filters">Resetar Filtros</button>
+        <span id="row-count"></span>
+    </div>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Data<br><input type="text" data-column="data" placeholder="Filtrar por Data"></th>
+                <th>Hora<br><input type="text" data-column="hora" placeholder="Filtrar por Hora"></th>
+                <th>ID<br><input type="text" data-column="id" placeholder="Filtrar por ID"></th>
+                <th>Sensor<br><input type="text" data-column="sensor" placeholder="Filtrar por Sensor"></th>
+                <th>Valor<br><input type="text" data-column="valor" placeholder="Filtrar por Valor"></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
