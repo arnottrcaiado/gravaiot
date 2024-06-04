@@ -215,7 +215,7 @@ def latest_temperature():
 
 
 
-@app.route('/mapa')
+@app.route('/api/mapa')
 def index():
     return render_template('mapacalor.html')
 

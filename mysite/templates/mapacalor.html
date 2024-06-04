@@ -248,8 +248,8 @@
                 .catch(error => console.error('Error fetching data:', error));
         }
 
-        // Chama a função fetchDataAndUpdateChart a cada 30 segundos
-        setInterval(fetchDataAndUpdateChart, 30000);
+        // Chama a função fetchDataAndUpdateChart a cada 10 segundos
+        setInterval(fetchDataAndUpdateChart, 10000);
 
         // Chama a função fetchDataAndUpdateChart ao carregar a página
         window.onload = fetchDataAndUpdateChart;
