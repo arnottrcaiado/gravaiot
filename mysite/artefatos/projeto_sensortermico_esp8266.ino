@@ -178,7 +178,6 @@ void loop() {
     Serial.println("Envio de Dados p/ API");
     previousMillis = currentMillis;
     enviarDadosParaAPI(pixels, APIENDPOINT, APIKEY);
-    delay(2000);
 
     if (tempAlerta > TEMPLIMITE) {  // Ajuste o valor crítico conforme necessário
     // Dispara a função da Alexa
